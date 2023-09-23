@@ -1,0 +1,128 @@
+const std = @import("std");
+const builtin = @import("builtin");
+const process = std.process;
+
+// https://gist.github.com/leecannon/d6f5d7e5af5881c466161270347ce84d
+pub const log_level: std.log.Leve = switch (builtin.mode) {
+    .Debug => .debug,
+    .ReleaseSafe => .notice,
+    .ReleaseFast => .err,
+    .ReleaseSmall => .err,
+};
+
+const uri = std.Uri.parse("https://api.openai.com/v1/chat/completions") catch unreachable;
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var arena = std.heap.ArenaAllocator.init(gpa.allocator());
+    defer arena.deinit();
+
+    const allocator = arena.allocator();
+
+    // get the message from the command line
+    const message = try getArgument(allocator);
+    defer allocator.free(message);
+
+    // get the key from the environment
+    const OPENAI_API_KEY = try getOpenAIKey(allocator);
+    defer allocator.free(OPENAI_API_KEY);
+
+    var client: std.http.Client = .{ .allocator = allocator };
+    defer client.deinit();
+
+    var headers = std.http.Headers{ .allocator = allocator };
+    defer headers.deinit();
+
+    try headers.append("Content-Type", "application/json");
+    try headers.append("Authorization", try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY}));
+
+    var req = try client.request(.POST, uri, headers, .{});
+    defer req.deinit();
+
+    req.transfer_encoding = .chunked;
+
+    // https://platform.openai.com/docs/api-reference/making-requests
+    var json = try std.json.stringifyAlloc(allocator, .{
+        .model = "gpt-3.5-turbo",
+        .messages = &[_]Message{
+            .{ .role = "user", .content = message },
+        },
+    }, .{});
+    defer allocator.free(json);
+
+    std.log.info("json: {s}\n", .{json});
+
+    // send data
+    try req.start();
+    try req.writeAll(json);
+    try req.finish();
+
+    try req.wait();
+
+    const body = try req.reader().readAllAlloc(allocator, 1111_1111);
+    defer allocator.free(body);
+
+    std.log.info("body: {s}\n", .{body});
+
+    const result = try parseResponse(allocator, body);
+    defer result.deinit();
+
+    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
+    const stdout = bw.writer();
+
+    try stdout.print("{s}", .{result.value.choices[0].message.content});
+
+    try bw.flush();
+}
+
+const Message = struct {
+    role: []const u8,
+    content: []const u8,
+};
+
+const Result = struct {
+    id: []const u8,
+    object: []const u8,
+    created: u32,
+    model: []const u8,
+    choices: []Choice,
+};
+
+const Choice = struct {
+    index: u32,
+    finish_reason: []const u8,
+    message: Message,
+};
+
+fn getOpenAIKey(allocator: std.mem.Allocator) ![]const u8 {
+    var env_map = try std.process.getEnvMap(allocator);
+    defer env_map.deinit();
+
+    const key = if (env_map.get("OPENAI_API_KEY")) |key| key else {
+        std.log.err("OPENAI_API_KEY not set\n", .{});
+        unreachable;
+    };
+
+    return try allocator.dupe(u8, key);
+}
+
+fn getArgument(allocator: std.mem.Allocator) ![]const u8 {
+    const args = try process.argsAlloc(allocator);
+    defer process.argsFree(allocator, args);
+
+    if (args.len == 1) {
+        return try allocator.dupe(u8, "Hello, I'm a user.");
+    } else {
+        return try allocator.dupe(u8, args[1]);
+    }
+}
+
+fn parseResponse(allocator: std.mem.Allocator, body: []const u8) !std.json.Parsed(Result) {
+    const json = try std.json.parseFromSlice(
+        Result,
+        allocator,
+        body,
+        .{ .ignore_unknown_fields = true },
+    );
+    return json;
+}
