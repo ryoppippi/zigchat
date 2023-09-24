@@ -33,8 +33,11 @@ pub fn main() !void {
     var headers = std.http.Headers{ .allocator = allocator };
     defer headers.deinit();
 
+    var bearer = try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY});
+    defer allocator.free(bearer);
+
     try headers.append("Content-Type", "application/json");
-    try headers.append("Authorization", try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY}));
+    try headers.append("Authorization", bearer);
 
     // https://platform.openai.com/docs/api-reference/making-requests
     var json = try std.json.stringifyAlloc(allocator, .{
