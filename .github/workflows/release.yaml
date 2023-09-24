@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         zig_version:
-          - 0.11.0
+          - master
         targets:
           - aarch64-linux
           - x86_64-linux
@@ -75,10 +75,12 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         path: ${{ env.BINARY_DIR }}
-    - name: Install ghr
-      uses: jaxxstorm/action-install-gh-release@v1.10.0
+    - name: setup go
+      uses: actions/setup-go@v2
       with:
-        repo: tcnksm/ghr
+        go-version: stable
+    - name: install ghr
+      run: go install github.com/tcnksm/ghr@latest
     - name: Create Release
       id: create_release
       uses: actions/create-release@master

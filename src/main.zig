@@ -36,10 +36,10 @@ pub fn main() !void {
     try headers.append("Content-Type", "application/json");
     try headers.append("Authorization", try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY}));
 
-    var req = try client.request(.POST, uri, headers, .{});
-    defer req.deinit();
-
-    req.transfer_encoding = .chunked;
+    // var req = try client.request(.POST, uri, headers, .{});
+    // defer req.deinit();
+    //
+    // req.transfer_encoding = .chunked;
 
     // https://platform.openai.com/docs/api-reference/making-requests
     var json = try std.json.stringifyAlloc(allocator, .{
@@ -52,27 +52,30 @@ pub fn main() !void {
 
     std.log.info("json: {s}\n", .{json});
 
-    // send data
-    try req.start();
-    try req.writeAll(json);
-    try req.finish();
+    var res = try client.fetch(allocator, .{
+        .method = .POST,
+        .location = .{ .uri = uri },
+        .headers = headers,
+        .payload = .{ .string = json },
+    });
+    defer res.deinit();
 
-    try req.wait();
+    if (res.body) |body| {
+        std.log.info("body: {s}\n", .{body});
 
-    const body = try req.reader().readAllAlloc(allocator, 1111_1111);
-    defer allocator.free(body);
+        const result = try parseResponse(allocator, body);
+        defer result.deinit();
 
-    std.log.info("body: {s}\n", .{body});
+        var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
+        const stdout = bw.writer();
 
-    const result = try parseResponse(allocator, body);
-    defer result.deinit();
+        try stdout.print("{s}", .{result.value.choices[0].message.content});
 
-    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
-    const stdout = bw.writer();
-
-    try stdout.print("{s}", .{result.value.choices[0].message.content});
-
-    try bw.flush();
+        try bw.flush();
+    } else {
+        std.log.err("no body\n", .{});
+        std.log.err("status: {any}\n", .{res.status});
+    }
 }
 
 const Message = struct {
