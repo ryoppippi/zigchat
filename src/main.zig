@@ -36,11 +36,6 @@ pub fn main() !void {
     try headers.append("Content-Type", "application/json");
     try headers.append("Authorization", try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY}));
 
-    // var req = try client.request(.POST, uri, headers, .{});
-    // defer req.deinit();
-    //
-    // req.transfer_encoding = .chunked;
-
     // https://platform.openai.com/docs/api-reference/making-requests
     var json = try std.json.stringifyAlloc(allocator, .{
         .model = "gpt-3.5-turbo",
