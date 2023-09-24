@@ -14,5 +14,5 @@ jobs:
       - uses: goto-bus-stop/setup-zig@v2
         with:
           version: ${{ matrix.zig_version }}
-      - run: zig fmt --check src/*.zig
+      - run: zig fmt --check src/*.zig *.zig *.zon
       - run: zig build test

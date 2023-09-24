@@ -2,6 +2,8 @@ const std = @import("std");
 const builtin = @import("builtin");
 const process = std.process;
 
+const clap = @import("clap");
+
 // https://gist.github.com/leecannon/d6f5d7e5af5881c466161270347ce84d
 pub const log_level: std.log.Level = switch (builtin.mode) {
     .Debug => .debug,
@@ -14,18 +16,49 @@ comptime {
     _ = log_level;
 }
 
+const version = "0.0.4";
+
 const uri = std.Uri.parse("https://api.openai.com/v1/chat/completions") catch unreachable;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var arena = std.heap.ArenaAllocator.init(gpa.allocator());
     defer arena.deinit();
-
     const allocator = arena.allocator();
 
-    // get the message from the command line
-    const message = try getArgument(allocator);
-    defer allocator.free(message);
+    // init stdout
+    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
+    const stdout = bw.writer();
+
+    // get params
+    const params = comptime clap.parseParamsComptime(
+        \\-h, --help         Display the help
+        \\-v, --version      Display the version
+        \\<PROMPT>           "prompt to send to the OpenAI API"
+        \\
+    );
+
+    const parsers = comptime .{
+        .PROMPT = clap.parsers.string,
+    };
+    var diag = clap.Diagnostic{};
+    var args_res = try clap.parse(clap.Help, &params, parsers, .{ .diagnostic = &diag });
+    defer args_res.deinit();
+
+    if (args_res.args.help != 0) {
+        return clap.help(std.io.getStdErr().writer(), clap.Help, &params, .{});
+    }
+    if (args_res.args.version != 0) {
+        // return std.debug.print("v{s}\n", .{version});
+        try stdout.print("v{s}\n", .{version});
+        return try bw.flush();
+    }
+
+    const pos = args_res.positionals;
+    const prompt = if (pos.len > 0) pos[0] else {
+        std.log.err("no prompt found\n", .{});
+        unreachable;
+    };
 
     // get the key from the environment
     const OPENAI_API_KEY = try getOpenAIKey(allocator);
@@ -49,7 +82,7 @@ pub fn main() !void {
         Request{
             .model = "gpt-3.5-turbo",
             .messages = &[_]Message{
-                .{ .role = "user", .content = message },
+                .{ .role = "user", .content = prompt },
             },
         },
         .{},
@@ -76,9 +109,6 @@ pub fn main() !void {
             .{ .ignore_unknown_fields = true },
         );
         defer result.deinit();
-
-        var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
-        const stdout = bw.writer();
 
         try stdout.print("{s}", .{result.value.choices[0].message.content});
 
@@ -123,15 +153,4 @@ fn getOpenAIKey(allocator: std.mem.Allocator) ![]const u8 {
     };
 
     return try allocator.dupe(u8, key);
-}
-
-fn getArgument(allocator: std.mem.Allocator) ![]const u8 {
-    const args = try process.argsAlloc(allocator);
-    defer process.argsFree(allocator, args);
-
-    if (args.len == 1) {
-        return try allocator.dupe(u8, "Hello, I'm a user.");
-    } else {
-        return try allocator.dupe(u8, args[1]);
-    }
 }
