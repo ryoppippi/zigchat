@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  upload_artifacts:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        zig_version:
+          - 0.11.0
+        targets:
+          - aarch64-linux
+          - x86_64-linux
+          - aarch64-windows
+          - x86_64-windows
+          - aarch64-macos
+          - x86_64-macos
+    steps:
+    - uses: actions/checkout@v4
+    - uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: ${{ matrix.zig_version }}
+    - name: cache zig-out
+      uses: actions/cache@v3
+      with:
+        path: zig-out
+        key: ${{ runner.os }}-zig-out-${{ matrix.zig_version }}-${{ matrix.targets }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-zig-out-${{ matrix.zig_version }}-${{ matrix.targets }}-
+          ${{ runner.os }}-zig-out-${{ matrix.zig_version }}-
+          ${{ runner.os }}-zig-out-
+    - name: Build
+      shell: bash -xe {0}
+      run: |
+        zig build -Dtarget=${{ matrix.targets }} -Doptimize=ReleaseSafe
+        ls -la ./zig-out/bin/
+    - name: For mac/linux, tar.gz and for windows zip
+      id: archive
+      shell: bash -xe {0}
+      run: |
+        if [ "${{ matrix.targets }}" = "x86_64-windows" ] || [ "${{ matrix.targets }}" = "aarch64-windows" ]; then
+          ASSET_NAME=zigchat-${{ matrix.targets }}.zip
+          echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
+          zip -r $ASSET_NAME ./zig-out/bin/
+        else
+          ASSET_NAME=zigchat-${{ matrix.targets }}.tar.gz
+          echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
+          tar -czvf $ASSET_NAME ./zig-out/bin/
+        fi
+    - name: Upload to Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ steps.archive.outputs.ASSET_NAME }}
+        path: ./${{ steps.archive.outputs.ASSET_NAME }}
+
+  publish_binary_to_release:
+    name: Publish Binary to Release
+    needs: upload_artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: startsWith(github.ref, 'refs/tags/v')
+    env:
+      BINARY_DIR: ./bins
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v2
+      with:
+        path: ${{ env.BINARY_DIR }}
+    - name: Install ghr
+      uses: jaxxstorm/action-install-gh-release@v1.10.0
+      with:
+        repo: tcnksm/ghr
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+    - name: Publish
+      run: |
+        ghr \
+          -t ${{ secrets.GITHUB_TOKEN }} \
+          -u ${{ github.repository_owner }} \
+          -r ${{ github.event.repository.name }} \
+          -c ${{ github.sha }} \
+          -delete \
+          -replace \
+          -b "Release ${{ github.ref }}" \
+          ${{ github.ref }} \
+          ${{ env.BINARY_DIR }}
+
