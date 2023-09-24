@@ -10,6 +10,9 @@ export OPENAI_API_KEY=<your key>
 zigchat "Hello!"
 ```
 
+※ You need `0.12.0-dev` or later.
+If you want to compile in `0.11.0` see the `zig-0.11.0` branch.
+
 ## Authors
 
 - Ryotaro "Justin" Kimura http://github.com/ryoppippi
