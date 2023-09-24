@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 const process = std.process;
 
 // https://gist.github.com/leecannon/d6f5d7e5af5881c466161270347ce84d
-pub const log_level: std.log.Leve = switch (builtin.mode) {
+pub const log_level: std.log.Level = switch (builtin.mode) {
     .Debug => .debug,
     .ReleaseSafe => .notice,
     .ReleaseFast => .err,
