@@ -40,11 +40,15 @@ jobs:
         if [ "${{ matrix.targets }}" = "x86_64-windows" ] || [ "${{ matrix.targets }}" = "aarch64-windows" ]; then
           ASSET_NAME=zigchat-${{ matrix.targets }}.zip
           echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
-          zip -r $ASSET_NAME ./zig-out/bin/
+          cd ./zig-out/bin/
+          zip $ASSET_NAME *
+          mv $ASSET_NAME ${{ github.workspace }}/$ASSET_NAME
         else
           ASSET_NAME=zigchat-${{ matrix.targets }}.tar.gz
           echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
-          tar -czvf $ASSET_NAME ./zig-out/bin/
+          cd ./zig-out/bin/
+          tar -czf $ASSET_NAME *
+          mv $ASSET_NAME ${{ github.workspace }}/$ASSET_NAME
         fi
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v3
