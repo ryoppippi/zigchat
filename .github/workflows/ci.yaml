@@ -3,18 +3,24 @@ on:
   pull_request:
     
 jobs:
-  test:
+  test_lint:
     strategy:
       matrix:
         os: [ubuntu-latest ]
+        zig_version: [master]
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v4
       - uses: goto-bus-stop/setup-zig@v2
-      - run: zig build test
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: ${{ matrix.zig_version }}
+      - name: cache zig-cache
+        uses: actions/cache@v3
+        with:
+          path: zig-cache
+          key: ${{ runner.os }}-zig-cache-${{ matrix.zig_version }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-zig-cache-${{ matrix.zig_version }}-
+            ${{ runner.os }}-zig-cache-
       - run: zig fmt --check src/*.zig
+      - run: zig build test

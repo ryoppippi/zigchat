@@ -28,15 +28,15 @@ jobs:
     - uses: goto-bus-stop/setup-zig@v2
       with:
         version: ${{ matrix.zig_version }}
-    - name: cache zig-out
+    - name: cache zig-cache
       uses: actions/cache@v3
       with:
-        path: zig-out
-        key: ${{ runner.os }}-zig-out-${{ matrix.zig_version }}-${{ matrix.targets }}-${{ github.sha }}
+        path: zig-cache
+        key: ${{ runner.os }}-zig-cache-${{ matrix.zig_version }}-${{ matrix.targets }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-zig-out-${{ matrix.zig_version }}-${{ matrix.targets }}-
-          ${{ runner.os }}-zig-out-${{ matrix.zig_version }}-
-          ${{ runner.os }}-zig-out-
+          ${{ runner.os }}-zig-cache-${{ matrix.zig_version }}-${{ matrix.targets }}-
+          ${{ runner.os }}-zig-cache-${{ matrix.zig_version }}-
+          ${{ runner.os }}-zig-cache-
     - name: Build
       shell: bash -xe {0}
       run: |
@@ -71,34 +71,23 @@ jobs:
     env:
       BINARY_DIR: ./bins
     steps:
+    - uses: actions/checkout@v4
     - name: Download Artifact
       uses: actions/download-artifact@v2
       with:
         path: ${{ env.BINARY_DIR }}
     - name: setup go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v4
       with:
-        go-version: stable
+        go-version: 'stable'
     - name: install ghr
       run: go install github.com/tcnksm/ghr@latest
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
     - name: Publish
       run: |
         ghr \
-          -t ${{ secrets.GITHUB_TOKEN }} \
-          -u ${{ github.repository_owner }} \
-          -r ${{ github.event.repository.name }} \
-          -c ${{ github.sha }} \
-          -delete \
-          -replace \
-          -b "Release ${{ github.ref }}" \
-          ${{ github.ref }} \
-          ${{ env.BINARY_DIR }}
+        -delete \
+        -replace \
+        -t ${{ secrets.GITHUB_TOKEN }} \
+        ${{ github.ref }} \
+        ${{ env.BINARY_DIR }}
 
