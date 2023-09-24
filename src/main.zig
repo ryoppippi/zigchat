@@ -30,22 +30,26 @@ pub fn main() !void {
     var client: std.http.Client = .{ .allocator = allocator };
     defer client.deinit();
 
-    var headers = std.http.Headers{ .allocator = allocator };
+    var headers: std.http.Headers = .{ .allocator = allocator };
     defer headers.deinit();
 
-    var bearer = try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY});
+    const bearer = try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY});
     defer allocator.free(bearer);
 
     try headers.append("Content-Type", "application/json");
     try headers.append("Authorization", bearer);
 
     // https://platform.openai.com/docs/api-reference/making-requests
-    var json = try std.json.stringifyAlloc(allocator, .{
-        .model = "gpt-3.5-turbo",
-        .messages = &[_]Message{
-            .{ .role = "user", .content = message },
+    const json = try std.json.stringifyAlloc(
+        allocator,
+        Request{
+            .model = "gpt-3.5-turbo",
+            .messages = &[_]Message{
+                .{ .role = "user", .content = message },
+            },
         },
-    }, .{});
+        .{},
+    );
     defer allocator.free(json);
 
     std.log.info("json: {s}\n", .{json});
@@ -61,7 +65,12 @@ pub fn main() !void {
     if (res.body) |body| {
         std.log.info("body: {s}\n", .{body});
 
-        const result = try parseResponse(allocator, body);
+        const result = try std.json.parseFromSlice(
+            Result,
+            allocator,
+            body,
+            .{ .ignore_unknown_fields = true },
+        );
         defer result.deinit();
 
         var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
@@ -76,6 +85,11 @@ pub fn main() !void {
     }
 }
 
+const Request = struct {
+    model: []const u8,
+    messages: []const Message,
+};
+
 const Message = struct {
     role: []const u8,
     content: []const u8,
@@ -86,7 +100,7 @@ const Result = struct {
     object: []const u8,
     created: u32,
     model: []const u8,
-    choices: []Choice,
+    choices: []const Choice,
 };
 
 const Choice = struct {
@@ -116,14 +130,4 @@ fn getArgument(allocator: std.mem.Allocator) ![]const u8 {
     } else {
         return try allocator.dupe(u8, args[1]);
     }
-}
-
-fn parseResponse(allocator: std.mem.Allocator, body: []const u8) !std.json.Parsed(Result) {
-    const json = try std.json.parseFromSlice(
-        Result,
-        allocator,
-        body,
-        .{ .ignore_unknown_fields = true },
-    );
-    return json;
 }
