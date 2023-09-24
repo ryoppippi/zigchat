@@ -28,15 +28,6 @@ jobs:
     - uses: goto-bus-stop/setup-zig@v2
       with:
         version: ${{ matrix.zig_version }}
-    - name: cache zig-cache
-      uses: actions/cache@v3
-      with:
-        path: zig-cache
-        key: ${{ runner.os }}-zig-cache-${{ matrix.zig_version }}-${{ matrix.targets }}-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-zig-cache-${{ matrix.zig_version }}-${{ matrix.targets }}-
-          ${{ runner.os }}-zig-cache-${{ matrix.zig_version }}-
-          ${{ runner.os }}-zig-cache-
     - name: Build
       shell: bash -xe {0}
       run: |
