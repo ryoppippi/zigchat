@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const process = std.process;
+const metadata = @import("metadata");
 
 const clap = @import("clap");
 
@@ -15,8 +16,6 @@ pub const log_level: std.log.Level = switch (builtin.mode) {
 comptime {
     _ = log_level;
 }
-
-const version = "0.0.4";
 
 const uri = std.Uri.parse("https://api.openai.com/v1/chat/completions") catch unreachable;
 
@@ -49,8 +48,7 @@ pub fn main() !void {
         return clap.help(std.io.getStdErr().writer(), clap.Help, &params, .{});
     }
     if (args_res.args.version != 0) {
-        // return std.debug.print("v{s}\n", .{version});
-        try stdout.print("v{s}\n", .{version});
+        try stdout.print(metadata.version ++ "\n", .{});
         return try bw.flush();
     }
 

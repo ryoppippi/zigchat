@@ -15,6 +15,8 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
+    const build_options = b.addOptions();
+
     const exe = b.addExecutable(.{
         .name = "zigchat",
         // In this case the main source file is merely a path, however, in more
@@ -30,6 +32,10 @@ pub fn build(b: *std.Build) void {
     });
 
     exe.addModule("clap", clap.module("clap"));
+
+    // add version info
+    exe.addOptions("metadata", build_options);
+    build_options.addOption([]const u8, "version", "0.4.0");
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
