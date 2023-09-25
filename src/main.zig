@@ -17,7 +17,7 @@ comptime {
     _ = log_level;
 }
 
-const uri = std.Uri.parse("https://api.openai.com/v1/chat/completions") catch unreachable;
+const uri = std.Uri.parse("https://api.openai.com/v1/chat/completions") catch @compileError("invalid uri");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
