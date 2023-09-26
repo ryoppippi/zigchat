@@ -1,4 +1,5 @@
 on:
+  workflow_dispatch:
   push:
   pull_request:
     
@@ -6,8 +7,10 @@ jobs:
   test_lint:
     strategy:
       matrix:
-        os: [ubuntu-latest ]
-        zig_version: [master]
+        os: 
+          - ubuntu-latest
+        zig_version: 
+          - master
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v4
@@ -16,3 +19,82 @@ jobs:
           version: ${{ matrix.zig_version }}
       - run: zig fmt --check src/*.zig *.zig *.zon
       - run: zig build test
+
+  build_assets:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        zig_version:
+          - master
+        targets:
+          - aarch64-linux
+          - x86_64-linux
+          - aarch64-windows
+          - x86_64-windows
+          - aarch64-macos
+          - x86_64-macos
+        optimize:
+          - ReleaseSafe
+    steps:
+    - uses: actions/checkout@v4
+    - uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: ${{ matrix.zig_version }}
+    - name: Build
+      shell: bash -xe {0}
+      run: |
+        zig build --verbose \
+        -Dtarget=${{ matrix.targets }} \
+        -Doptimize=${{ matrix.optimize }}
+        ls -la ./zig-out/bin/
+    - name: For mac/linux, tar.gz and for windows zip
+      id: archive
+      shell: bash -xe {0}
+      run: |
+        if [[ "${{ matrix.targets }}" == *"windows"* ]]; then
+          ASSET_NAME=zigchat-${{ matrix.targets }}.zip
+          echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
+          cd ./zig-out/bin/
+          zip $ASSET_NAME *
+          mv $ASSET_NAME ${{ github.workspace }}/$ASSET_NAME
+        else
+          ASSET_NAME=zigchat-${{ matrix.targets }}.tar.gz
+          echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
+          cd ./zig-out/bin/
+          tar -czf $ASSET_NAME *
+          mv $ASSET_NAME ${{ github.workspace }}/$ASSET_NAME
+        fi
+    - name: Upload to Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist-${{ matrix.targets }}
+        path: ./${{ steps.archive.outputs.ASSET_NAME }}
+
+  publish_binary_to_release:
+    name: Publish Binary to Release
+    needs: 
+      - test_lint
+      - build_assets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: startsWith(github.ref, 'refs/tags/v')
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v2
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: ${{ github.ref_name }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        draft: true
+        generate_release_notes: true
+        files: |
+          dist-*/*.zip
+          dist-*/*.tar.gz
+
