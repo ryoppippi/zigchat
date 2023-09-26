@@ -44,34 +44,27 @@ jobs:
       with:
         version: ${{ matrix.zig_version }}
     - name: Build
-      shell: bash -xe {0}
       run: |
-        zig build --verbose \
-        -Dtarget=${{ matrix.targets }} \
-        -Doptimize=${{ matrix.optimize }}
-        ls -la ./zig-out/bin/
-    - name: For mac/linux, tar.gz and for windows zip
-      id: archive
-      shell: bash -xe {0}
+        zig build --verbose -Dtarget=${{ matrix.targets }} -Doptimize=${{ matrix.optimize }}
+    - name: For mac/linux, tar.gz
+      if: ${{ !endsWith(matrix.targets, 'windows') }}
+      working-directory: ./zig-out/bin/
       run: |
-        if [[ "${{ matrix.targets }}" == *"windows"* ]]; then
-          ASSET_NAME=zigchat-${{ matrix.targets }}.zip
-          echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
-          cd ./zig-out/bin/
-          zip $ASSET_NAME *
-          mv $ASSET_NAME ${{ github.workspace }}/$ASSET_NAME
-        else
-          ASSET_NAME=zigchat-${{ matrix.targets }}.tar.gz
-          echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
-          cd ./zig-out/bin/
-          tar -czf $ASSET_NAME *
-          mv $ASSET_NAME ${{ github.workspace }}/$ASSET_NAME
-        fi
+        ls -la .
+        tar -czf zigchat-${{ matrix.targets }}.tar.gz *
+    - name: For windows, zip
+      if: ${{ endsWith(matrix.targets, 'windows') }}
+      working-directory: ./zig-out/bin/
+      run: |
+        ls -la .
+        zip -r zigchat-${{ matrix.targets }}.zip *.exe
     - name: Upload to Artifacts
       uses: actions/upload-artifact@v3
       with:
         name: dist-${{ matrix.targets }}
-        path: ./${{ steps.archive.outputs.ASSET_NAME }}
+        path: |
+          zig-out/bin/*.zip
+          zig-out/bin/*.tar.gz
 
   publish_binary_to_release:
     name: Publish Binary to Release
@@ -97,4 +90,3 @@ jobs:
         files: |
           dist-*/*.zip
           dist-*/*.tar.gz
-
