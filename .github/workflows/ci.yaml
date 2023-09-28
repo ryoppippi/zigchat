@@ -90,3 +90,15 @@ jobs:
         files: |
           dist-*/*.zip
           dist-*/*.tar.gz
+
+  action-timeline:
+    needs: 
+      - test_lint
+      - build_assets
+      - publish_binary_to_release
+    permissions:
+      actions: read
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: Kesin11/actions-timeline@v1
