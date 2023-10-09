@@ -2,6 +2,19 @@
 
 ![画面収録 2023-09-24 11 59 49](https://github.com/ryoppippi/zigchat/assets/1560508/f1f1533d-0cc7-44ec-ae3b-219ecd9992b7)
 
+## Install
+
+### GitHub Releases
+
+Download a prebuilt binary from [GitHub Releases](https://github.com/ryoppippi/zigchat/releases) and install it in $PATH.
+
+### aqua
+
+[aqua](https://aquaproj.github.io/) is a CLI Version Manager.
+
+```bash
+aqua g -i ryoppippi/zigchat
+```
 
 ## How to run
 
