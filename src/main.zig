@@ -5,16 +5,15 @@ const metadata = @import("metadata");
 
 const clap = @import("clap");
 
-// https://gist.github.com/leecannon/d6f5d7e5af5881c466161270347ce84d
-pub const log_level: std.log.Level = switch (builtin.mode) {
+pub const std_options: std.Options = .{ .log_level = switch (builtin.mode) {
     .Debug => .debug,
     .ReleaseSafe => .warn,
     .ReleaseFast => .err,
     .ReleaseSmall => .err,
-};
+} };
 
 comptime {
-    _ = log_level;
+    _ = std_options;
 }
 
 const uri = std.Uri.parse("https://api.openai.com/v1/chat/completions") catch @compileError("invalid uri");
