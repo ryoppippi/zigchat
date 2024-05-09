@@ -10,7 +10,7 @@ jobs:
         os: 
           - ubuntu-latest
         zig_version: 
-          - master
+          - 0.12.0
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         zig_version:
-          - master
+          - 0.12.0
         targets:
           - aarch64-linux
           - x86_64-linux
