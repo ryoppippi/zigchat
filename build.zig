@@ -35,7 +35,7 @@ pub fn build(b: *std.Build) void {
 
     // add version info
     const build_options = b.addOptions();
-    build_options.addOption([]const u8, "version", "0.4.0");
+    build_options.addOption([]const u8, "version", "0.6.0");
     exe.root_module.addOptions("metadata", build_options);
 
     // This declares intent for the executable to be installed into the
