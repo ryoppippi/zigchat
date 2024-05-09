@@ -2,6 +2,8 @@ const std = @import("std");
 const builtin = @import("builtin");
 const process = std.process;
 const metadata = @import("metadata");
+const http = std.http;
+const Request = http.Client.Request;
 
 const clap = @import("clap");
 
@@ -67,14 +69,13 @@ pub fn main() !void {
     var client: std.http.Client = .{ .allocator = allocator };
     defer client.deinit();
 
-    var headers: std.http.Headers = .{ .allocator = allocator };
-    defer headers.deinit();
-
     const bearer = try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY});
     defer allocator.free(bearer);
 
-    try headers.append("Content-Type", "application/json");
-    try headers.append("Authorization", bearer);
+    const headers: Request.Headers = .{
+        .content_type = .{ .override = "application/json" },
+        .authorization = .{ .override = bearer },
+    };
 
     // https://platform.openai.com/docs/api-reference/making-requests
     const json = try std.json.stringifyAlloc(
