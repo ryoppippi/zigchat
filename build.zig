@@ -15,8 +15,6 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const build_options = b.addOptions();
-
     const exe = b.addExecutable(.{
         .name = "zigchat",
         // In this case the main source file is merely a path, however, in more
@@ -26,16 +24,19 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const clap = b.dependency("clap", .{
+    const clap_dep = b.dependency("clap", .{
         .target = target,
         .optimize = optimize,
     });
 
-    exe.addModule("clap", clap.module("clap"));
+    const clap_mod = clap_dep.module("clap");
+
+    exe.root_module.addImport("clap", clap_mod);
 
     // add version info
-    exe.addOptions("metadata", build_options);
+    const build_options = b.addOptions();
     build_options.addOption([]const u8, "version", "0.4.0");
+    exe.root_module.addOptions("metadata", build_options);
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -73,7 +74,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    unit_tests.addModule("clap", clap.module("clap"));
+    unit_tests.root_module.addImport("clap", clap_mod);
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
 

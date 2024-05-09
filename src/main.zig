@@ -1,20 +1,23 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const ArrayList = std.ArrayList;
 const process = std.process;
 const metadata = @import("metadata");
+const http = std.http;
+const Client = http.Client;
+const Request = http.Client.Request;
 
 const clap = @import("clap");
 
-// https://gist.github.com/leecannon/d6f5d7e5af5881c466161270347ce84d
-pub const log_level: std.log.Level = switch (builtin.mode) {
+pub const std_options: std.Options = .{ .log_level = switch (builtin.mode) {
     .Debug => .debug,
     .ReleaseSafe => .warn,
     .ReleaseFast => .err,
     .ReleaseSmall => .err,
-};
+} };
 
 comptime {
-    _ = log_level;
+    _ = std_options;
 }
 
 const uri = std.Uri.parse("https://api.openai.com/v1/chat/completions") catch @compileError("invalid uri");
@@ -41,14 +44,17 @@ pub fn main() !void {
         .PROMPT = clap.parsers.string,
     };
     var diag = clap.Diagnostic{};
-    var args_res = try clap.parse(clap.Help, &params, parsers, .{ .diagnostic = &diag });
+    var args_res = try clap.parse(clap.Help, &params, parsers, .{
+        .diagnostic = &diag,
+        .allocator = allocator,
+    });
     defer args_res.deinit();
 
     if (args_res.args.help != 0) {
         return clap.help(std.io.getStdErr().writer(), clap.Help, &params, .{});
     }
     if (args_res.args.version != 0) {
-        try stdout.print(metadata.version ++ "\n", .{});
+        try stdout.print("{s}\n", .{metadata.version});
         return try bw.flush();
     }
 
@@ -62,22 +68,21 @@ pub fn main() !void {
     const OPENAI_API_KEY = try getOpenAIKey(allocator);
     defer allocator.free(OPENAI_API_KEY);
 
-    var client: std.http.Client = .{ .allocator = allocator };
+    var client: Client = .{ .allocator = allocator };
     defer client.deinit();
-
-    var headers: std.http.Headers = .{ .allocator = allocator };
-    defer headers.deinit();
 
     const bearer = try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY});
     defer allocator.free(bearer);
 
-    try headers.append("Content-Type", "application/json");
-    try headers.append("Authorization", bearer);
+    const headers: Request.Headers = .{
+        .content_type = .{ .override = "application/json" },
+        .authorization = .{ .override = bearer },
+    };
 
     // https://platform.openai.com/docs/api-reference/making-requests
     const json = try std.json.stringifyAlloc(
         allocator,
-        Request{
+        OpenAIRequest{
             .model = "gpt-3.5-turbo",
             .messages = &[_]Message{
                 .{ .role = "user", .content = prompt },
@@ -89,35 +94,45 @@ pub fn main() !void {
 
     std.log.info("json: {s}\n", .{json});
 
-    var res = try client.fetch(allocator, .{
+    var res_array_list = ArrayList(u8).init(allocator);
+    defer res_array_list.deinit();
+
+    const res = try client.fetch(.{
         .method = .POST,
         .location = .{ .uri = uri },
         .headers = headers,
-        .payload = .{ .string = json },
+        .response_storage = .{ .dynamic = &res_array_list },
+        .payload = json,
     });
-    defer res.deinit();
 
-    if (res.body) |body| {
-        std.log.info("body: {s}\n", .{body});
-
-        const result = try std.json.parseFromSlice(
-            Result,
-            allocator,
-            body,
-            .{ .ignore_unknown_fields = true },
-        );
-        defer result.deinit();
-
-        try stdout.print("{s}", .{result.value.choices[0].message.content});
-
-        try bw.flush();
-    } else {
-        std.log.err("no body\n", .{});
-        std.log.err("status: {any}\n", .{res.status});
+    if (res.status.class() != .success) {
+        std.log.err("status: {s}\n", .{res.status.phrase() orelse ""});
+        unreachable;
     }
+
+    const body = res_array_list.items;
+
+    if (body.len == 0) {
+        std.log.err("no body\n", .{});
+        unreachable;
+    }
+
+    std.log.info("body: {s}\n", .{body});
+
+    const parsed_body = try std.json.parseFromSlice(
+        Result,
+        allocator,
+        body,
+        .{ .ignore_unknown_fields = true },
+    );
+    defer parsed_body.deinit();
+
+    try stdout.print("{s}", .{parsed_body.value.choices[0].message.content});
+
+    try bw.flush();
 }
 
-const Request = struct {
+const OpenAIRequest = struct {
     model: []const u8,
     messages: []const Message,
 };
