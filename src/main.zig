@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const ArrayList = std.ArrayList;
 const process = std.process;
 const metadata = @import("metadata");
 const http = std.http;
@@ -93,32 +94,42 @@ pub fn main() !void {
 
     std.log.info("json: {s}\n", .{json});
 
-    var res = try client.fetch(allocator, .{
+    var res_array_list = ArrayList(u8).init(allocator);
+    defer res_array_list.deinit();
+
+    const res = try client.fetch(.{
         .method = .POST,
         .location = .{ .uri = uri },
         .headers = headers,
-        .payload = .{ .string = json },
+        .response_storage = .{ .dynamic = &res_array_list },
+        .payload = json,
     });
-    defer res.deinit();
 
-    if (res.body) |body| {
-        std.log.info("body: {s}\n", .{body});
-
-        const result = try std.json.parseFromSlice(
-            Result,
-            allocator,
-            body,
-            .{ .ignore_unknown_fields = true },
-        );
-        defer result.deinit();
-
-        try stdout.print("{s}", .{result.value.choices[0].message.content});
-
-        try bw.flush();
-    } else {
-        std.log.err("no body\n", .{});
-        std.log.err("status: {any}\n", .{res.status});
+    if (res.status.class() != .success) {
+        std.log.err("status: {s}\n", .{res.status.phrase() orelse ""});
+        unreachable;
     }
+
+    const body = res_array_list.items;
+
+    if (body.len == 0) {
+        std.log.err("no body\n", .{});
+        unreachable;
+    }
+
+    std.log.info("body: {s}\n", .{body});
+
+    const parsed_body = try std.json.parseFromSlice(
+        Result,
+        allocator,
+        body,
+        .{ .ignore_unknown_fields = true },
+    );
+    defer parsed_body.deinit();
+
+    try stdout.print("{s}", .{parsed_body.value.choices[0].message.content});
+
+    try bw.flush();
 }
 
 const OpenAIRequest = struct {
