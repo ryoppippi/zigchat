@@ -3,6 +3,7 @@ const builtin = @import("builtin");
 const process = std.process;
 const metadata = @import("metadata");
 const http = std.http;
+const Client = http.Client;
 const Request = http.Client.Request;
 
 const clap = @import("clap");
@@ -66,7 +67,7 @@ pub fn main() !void {
     const OPENAI_API_KEY = try getOpenAIKey(allocator);
     defer allocator.free(OPENAI_API_KEY);
 
-    var client: std.http.Client = .{ .allocator = allocator };
+    var client: Client = .{ .allocator = allocator };
     defer client.deinit();
 
     const bearer = try std.fmt.allocPrint(allocator, "Bearer {s}", .{OPENAI_API_KEY});
