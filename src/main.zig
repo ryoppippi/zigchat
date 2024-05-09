@@ -50,7 +50,7 @@ pub fn main() !void {
         return clap.help(std.io.getStdErr().writer(), clap.Help, &params, .{});
     }
     if (args_res.args.version != 0) {
-        try stdout.print(metadata.version ++ "\n", .{});
+        try stdout.print("{s}\n", .{metadata.version});
         return try bw.flush();
     }
 
