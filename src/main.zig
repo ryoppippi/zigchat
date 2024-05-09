@@ -80,7 +80,7 @@ pub fn main() !void {
     // https://platform.openai.com/docs/api-reference/making-requests
     const json = try std.json.stringifyAlloc(
         allocator,
-        Request{
+        OpenAIRequest{
             .model = "gpt-3.5-turbo",
             .messages = &[_]Message{
                 .{ .role = "user", .content = prompt },
@@ -120,7 +120,7 @@ pub fn main() !void {
     }
 }
 
-const Request = struct {
+const OpenAIRequest = struct {
     model: []const u8,
     messages: []const Message,
 };
