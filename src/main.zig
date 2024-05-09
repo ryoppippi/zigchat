@@ -40,7 +40,10 @@ pub fn main() !void {
         .PROMPT = clap.parsers.string,
     };
     var diag = clap.Diagnostic{};
-    var args_res = try clap.parse(clap.Help, &params, parsers, .{ .diagnostic = &diag });
+    var args_res = try clap.parse(clap.Help, &params, parsers, .{
+        .diagnostic = &diag,
+        .allocator = allocator,
+    });
     defer args_res.deinit();
 
     if (args_res.args.help != 0) {
