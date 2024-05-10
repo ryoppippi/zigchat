@@ -9,16 +9,13 @@ jobs:
       matrix:
         os: 
           - ubuntu-latest
-        zig_version: 
-          - 0.12.0
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v4
-      - uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: ${{ matrix.zig_version }}
-      - run: zig fmt --check src/*.zig *.zig *.zon
-      - run: zig build test
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.8.0
+      - run: devbox run fmt
+      - run: devbox run test
 
   build_assets:
     name: Release
@@ -27,8 +24,6 @@ jobs:
       contents: write
     strategy:
       matrix:
-        zig_version:
-          - 0.12.0
         targets:
           - aarch64-linux
           - x86_64-linux
@@ -40,12 +35,11 @@ jobs:
           - ReleaseSafe
     steps:
     - uses: actions/checkout@v4
-    - uses: goto-bus-stop/setup-zig@v2
-      with:
-        version: ${{ matrix.zig_version }}
+    - name: Install devbox
+      uses: jetify-com/devbox-install-action@v0.8.0
     - name: Build
       run: |
-        zig build --verbose -Dtarget=${{ matrix.targets }} -Doptimize=${{ matrix.optimize }}
+        devbox run build --verbose -Dtarget=${{ matrix.targets }} -Doptimize=${{ matrix.optimize }}
     - name: For mac/linux, tar.gz
       if: ${{ !endsWith(matrix.targets, 'windows') }}
       working-directory: ./zig-out/bin/
