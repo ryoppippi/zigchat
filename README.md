@@ -23,8 +23,11 @@ export OPENAI_API_KEY=<your key>
 zigchat "Hello!"
 ```
 
-※ You need `0.12.0-dev` or later.
-If you want to compile in `0.11.0` see the `zig-0.11.0` branch.
+## Development
+In this project, we use [devbox](https://www.jetify.com/devbox) to manage the development environment.
+
+※  If you want to compile in `0.11.0` see the `zig-0.11.0` branch.
+
 
 ## Authors
 
