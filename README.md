@@ -1,5 +1,11 @@
 # zigchat ZIG ❤️ OPENAI
 
+![GitHub Release](https://img.shields.io/github/v/release/ryoppippi/zigchat)
+[![Zig](https://custom-icon-badges.herokuapp.com/badge/Zig-ec915c.svg?logo=Zig&logoColor=white)]()
+[![Built with Devbox](https://www.jetify.com/img/devbox/shield_galaxy.svg)](https://www.jetify.com/devbox/docs/contributor-quickstart/)
+[![.github/workflows/ci.yaml](https://github.com/ryoppippi/zigchat/actions/workflows/ci.yaml/badge.svg)](https://github.com/ryoppippi/zigchat/actions/workflows/ci.yaml)
+
+
 ![画面収録 2023-09-24 11 59 49](https://github.com/ryoppippi/zigchat/assets/1560508/f1f1533d-0cc7-44ec-ae3b-219ecd9992b7)
 
 ## Install
