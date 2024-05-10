@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.6/.schema/devbox.schema.json",
+  "packages": [
+    "zig@0.12.0",
+    "zls@0.12.0"
+  ],
+  "shell": {
+    "init_hook": [
+      "zig version"
+    ],
+    "scripts": {
+      "version": "zig version",
+      "build": "zig build --verbose \"$@\"",
+      "test": "zig build test",
+      "fmt": "zig fmt --check src/*.zig *.zig *.zon",
+      "run": "./zig-out/bin/zigchat"
+    }
+  }
+}
