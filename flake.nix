@@ -22,16 +22,10 @@
           
           nativeBuildInputs = [
             zig
+            pkgs.zig.hook
           ];
           
-          buildPhase = ''
-            zig build --release=fast
-          '';
-          
-          installPhase = ''
-            mkdir -p $out/bin
-            cp zig-out/bin/zigchat $out/bin/
-          '';
+          zigBuildFlags = [ "--release=fast" ];
         };
       in
       {
