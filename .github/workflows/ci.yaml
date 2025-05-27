@@ -9,6 +9,7 @@ jobs:
       matrix:
         os: 
           - ubuntu-latest
+          - macos-latest
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +18,10 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - run: nix develop -c zig fmt --check src/*.zig *.zig *.zon
       - run: nix develop -c zig build test
+      - name: Test Nix build
+        run: |
+          nix build
+          ./result/bin/zigchat --help
 
   build_assets:
     name: Release

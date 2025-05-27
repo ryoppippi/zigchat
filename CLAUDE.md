@@ -65,3 +65,17 @@ The project uses GitHub Actions for:
 ## Version Information
 
 Note: There's a version mismatch between build.zig (0.6.0) and build.zig.zon (0.0.4) that should be reconciled.
+
+## Nix Build System
+
+The project uses Nix for reproducible builds with the following key features:
+
+- **Manual Build Phases**: Due to limitations with zig.hook and Zig's package manager, the Nix derivation uses manual buildPhase and installPhase
+  - Includes `pkgs.cacert` for SSL certificate support during dependency fetching
+  - Sets up proper environment variables for Zig's build system
+  
+- **Build Configuration**: 
+  - Uses `zig build --release=fast` for optimized binaries
+  - Properly handles Zig package manager dependencies within Nix sandbox
+
+- **Cross-platform Testing**: GitHub Actions tests the Nix build on both Ubuntu and macOS
