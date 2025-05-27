@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
         .name = "zigchat",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -69,7 +69,7 @@ pub fn build(b: *std.Build) void {
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     const unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -83,4 +83,12 @@ pub fn build(b: *std.Build) void {
     // running the unit tests.
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
+
+    // Format checking step
+    const fmt_check = b.addFmt(.{
+        .paths = &.{ "src", "build.zig", "build.zig.zon" },
+        .check = true,
+    });
+    const fmt_check_step = b.step("fmt-check", "Check code formatting");
+    fmt_check_step.dependOn(&fmt_check.step);
 }

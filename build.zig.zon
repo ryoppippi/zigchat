@@ -1,5 +1,6 @@
 .{
-    .name = "zigchat",
+    .fingerprint = 0x954488620abbcd1b,
+    .name = .zigchat,
     .version = "0.0.4",
     .paths = .{
         "src",

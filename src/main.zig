@@ -1,6 +1,5 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const ArrayList = std.ArrayList;
 const process = std.process;
 const metadata = @import("metadata");
 const http = std.http;
@@ -58,10 +57,9 @@ pub fn main() !void {
         return try bw.flush();
     }
 
-    const pos = args_res.positionals;
-    const prompt = if (pos.len > 0) pos[0] else {
+    const prompt = args_res.positionals[0] orelse {
         std.log.err("no prompt found\n", .{});
-        unreachable;
+        return error.NoPromptProvided;
     };
 
     // get the key from the environment
@@ -94,7 +92,7 @@ pub fn main() !void {
 
     std.log.info("json: {s}\n", .{json});
 
-    var res_array_list = ArrayList(u8).init(allocator);
+    var res_array_list = std.ArrayList(u8).init(allocator);
     defer res_array_list.deinit();
 
     const res = try client.fetch(.{
