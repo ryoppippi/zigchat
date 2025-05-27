@@ -2,7 +2,7 @@
 
 ![GitHub Release](https://img.shields.io/github/v/release/ryoppippi/zigchat)
 [![Zig](https://custom-icon-badges.herokuapp.com/badge/Zig-ec915c.svg?logo=Zig&logoColor=white)]()
-[![Built with Devbox](https://www.jetify.com/img/devbox/shield_galaxy.svg)](https://www.jetify.com/devbox/docs/contributor-quickstart/)
+[![Built with Nix](https://img.shields.io/badge/Built%20with-Nix-5277C3.svg?logo=nixos&logoColor=white)](https://nixos.org/)
 [![.github/workflows/ci.yaml](https://github.com/ryoppippi/zigchat/actions/workflows/ci.yaml/badge.svg)](https://github.com/ryoppippi/zigchat/actions/workflows/ci.yaml)
 
 
@@ -30,7 +30,26 @@ zigchat "Hello!"
 ```
 
 ## Development
-In this project, we use [devbox](https://www.jetify.com/devbox) to manage the development environment.
+This project uses [Nix flakes](https://nixos.wiki/wiki/Flakes) to manage the development environment.
+
+### Setup
+```bash
+# Enter the development shell
+nix develop
+
+# Or use direnv for automatic environment loading
+echo "use flake" > .envrc
+direnv allow
+```
+
+### Build
+```bash
+# Build the project
+nix build
+
+# Or within the dev shell
+zig build
+```
 
 ※  If you want to compile in `0.11.0` see the `zig-0.11.0` branch.
 
