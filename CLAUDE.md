@@ -52,8 +52,8 @@ The application is structured as a simple single-file CLI tool:
 
 ## Key Dependencies
 
-- **clap v0.8.0**: Used for command-line argument parsing
-- **Zig 0.12.0**: The project requires this specific version
+- **clap v0.10.0**: Used for command-line argument parsing
+- **Zig 0.14.0**: The project requires this specific version
 
 ## CI/CD Pipeline
 
