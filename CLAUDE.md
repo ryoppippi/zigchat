@@ -65,3 +65,16 @@ The project uses GitHub Actions for:
 ## Version Information
 
 Note: There's a version mismatch between build.zig (0.6.0) and build.zig.zon (0.0.4) that should be reconciled.
+
+## Nix Build System
+
+The project uses Nix for reproducible builds with the following key features:
+
+- **zig.hook**: The Nix package uses `pkgs.zig.hook` from nixpkgs which automatically handles:
+  - Running `zig build` during the build phase
+  - Installing binaries from `zig-out/bin/` to the Nix store
+  - Setting up proper build flags via `zigBuildFlags`
+  
+- **Build Flags**: The release build uses `zigBuildFlags = [ "--release=fast" ]` for optimized binaries
+
+- **Cross-platform Testing**: GitHub Actions tests the Nix build on both Ubuntu and macOS
