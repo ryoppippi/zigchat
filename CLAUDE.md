@@ -54,6 +54,7 @@ The application is structured as a simple single-file CLI tool:
 
 - **clap v0.10.0**: Used for command-line argument parsing
 - **Zig 0.14.0**: The project requires this specific version
+- **ZLS 0.14.0**: Zig Language Server for IDE features
 
 ## CI/CD Pipeline
 

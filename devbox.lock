@@ -2,8 +2,8 @@
   "lockfile_version": "1",
   "packages": {
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
-      "last_modified": "2025-04-23T03:04:08Z",
-      "resolved": "github:NixOS/nixpkgs/507b63021ada5fee621b6ca371c4fca9ca46f52c?lastModified=1745377448&narHash=sha256-jhZDfXVKdD7TSEGgzFJQvEEZ2K65UMiqW5YJ2aIqxMA%3D"
+      "last_modified": "2025-05-26T00:03:27Z",
+      "resolved": "github:NixOS/nixpkgs/3108eaa516ae22c2360928589731a4f1581526ef?lastModified=1748217807&narHash=sha256-P3u2PXxMlo49PutQLnk2PhI%2FimC69hFl1yY4aT5Nax8%3D"
     },
     "zig@0.14.0": {
       "last_modified": "2025-05-16T20:19:48Z",
@@ -69,51 +69,51 @@
         }
       }
     },
-    "zls@0.13.0": {
-      "last_modified": "2025-02-23T09:42:26Z",
-      "resolved": "github:NixOS/nixpkgs/2d068ae5c6516b2d04562de50a58c682540de9bf#zls",
+    "zls@0.14.0": {
+      "last_modified": "2025-05-16T20:19:48Z",
+      "resolved": "github:NixOS/nixpkgs/12a55407652e04dcf2309436eb06fef0d3713ef3#zls",
       "source": "devbox-search",
-      "version": "0.13.0",
+      "version": "0.14.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/f87s2l0zb95mfrdyc51dlm2k9xqzf15a-zls-0.13.0",
+              "path": "/nix/store/4ggs2rg2gl1f3fv0zymglz1ddh4yfhkf-zls-0.14.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/f87s2l0zb95mfrdyc51dlm2k9xqzf15a-zls-0.13.0"
+          "store_path": "/nix/store/4ggs2rg2gl1f3fv0zymglz1ddh4yfhkf-zls-0.14.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/f9czxnbc6k1j9va0xi1jki27hc6kzvnk-zls-0.13.0",
+              "path": "/nix/store/8wm4h46wqia4wbm47hp8k33wi07ghw6l-zls-0.14.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/f9czxnbc6k1j9va0xi1jki27hc6kzvnk-zls-0.13.0"
+          "store_path": "/nix/store/8wm4h46wqia4wbm47hp8k33wi07ghw6l-zls-0.14.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/p1jcw0cyhlixi96fmn40drsb8qlda4ya-zls-0.13.0",
+              "path": "/nix/store/s1y2lsv3cnxm697snhjkfmblbmpcwdfm-zls-0.14.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/p1jcw0cyhlixi96fmn40drsb8qlda4ya-zls-0.13.0"
+          "store_path": "/nix/store/s1y2lsv3cnxm697snhjkfmblbmpcwdfm-zls-0.14.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/j3qpw7qh27nnzdbs8sp4wjva4nlch4kq-zls-0.13.0",
+              "path": "/nix/store/35pl7wlm14ddvh2ac8xzg4sws6p4d3am-zls-0.14.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/j3qpw7qh27nnzdbs8sp4wjva4nlch4kq-zls-0.13.0"
+          "store_path": "/nix/store/35pl7wlm14ddvh2ac8xzg4sws6p4d3am-zls-0.14.0"
         }
       }
     }
