@@ -22,10 +22,19 @@
           
           nativeBuildInputs = [
             zig
-            pkgs.zig.hook
+            pkgs.cacert
           ];
           
-          zigBuildFlags = [ "--release=fast" ];
+          buildPhase = ''
+            export HOME=$TMPDIR
+            export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+            zig build --release=fast
+          '';
+          
+          installPhase = ''
+            mkdir -p $out/bin
+            cp zig-out/bin/zigchat $out/bin/
+          '';
         };
       in
       {
