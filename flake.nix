@@ -14,6 +14,14 @@
         zigPkgs = zig-overlay.packages.${system};
         zig = zigPkgs."0.14.0";
         
+        # Pre-fetch zig-clap dependency
+        zig-clap = pkgs.fetchFromGitHub {
+          owner = "Hejsil";
+          repo = "zig-clap";
+          rev = "0.10.0";
+          sha256 = "sha256-leXnA97ITdvmBhD2YESLBZAKjBg+G4R/+PPPRslz/ec=";
+        };
+        
         zigchat = pkgs.stdenv.mkDerivation {
           pname = "zigchat";
           version = "0.7.0";
@@ -28,6 +36,15 @@
           buildPhase = ''
             export HOME=$TMPDIR
             export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+            
+            # Setup Zig cache with pre-fetched dependencies
+            export ZIG_CACHE_DIR=$TMPDIR/zig-cache
+            export ZIG_LOCAL_CACHE_DIR=$TMPDIR/zig-local-cache
+            mkdir -p $ZIG_CACHE_DIR/p
+            
+            # Copy pre-fetched zig-clap to the cache
+            cp -r ${zig-clap} $ZIG_CACHE_DIR/p/clap-0.10.0-oBajB434AQBDh-Ei3YtoKIRxZacVPF1iSwp3IX_ZB8f0
+            
             zig build --release=fast
           '';
           
