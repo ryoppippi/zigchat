@@ -12,25 +12,23 @@ zigchat is a CLI tool written in Zig that provides a simple interface to OpenAI'
 ```bash
 zig build                    # Build the project
 zig build --release=fast     # Build optimized version
-devbox run build            # Alternative using devbox
+nix build                   # Build using Nix
 ```
 
 ### Run
 ```bash
 zig build run -- "your prompt here"    # Run with a prompt
-devbox run run "your prompt here"      # Alternative using devbox
+nix run . -- "your prompt here"        # Run using Nix
 ```
 
 ### Test
 ```bash
 zig build test              # Run all tests
-devbox run test            # Alternative using devbox
 ```
 
 ### Format
 ```bash
 zig fmt .                   # Format code
-devbox run fmt             # Alternative using devbox
 zig build fmt-check        # Check formatting without modifying
 ```
 

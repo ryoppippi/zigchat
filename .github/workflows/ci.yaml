@@ -12,10 +12,11 @@ jobs:
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v4
-      - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.9.0
-      - run: devbox run fmt-check
-      - run: devbox run test
+      - uses: cachix/install-nix-action@v30
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - run: nix develop -c zig fmt --check src/*.zig *.zig *.zon
+      - run: nix develop -c zig build test
 
   build_assets:
     name: Release
@@ -35,11 +36,12 @@ jobs:
           - ReleaseSafe
     steps:
     - uses: actions/checkout@v4
-    - name: Install devbox
-      uses: jetify-com/devbox-install-action@v0.9.0
+    - uses: cachix/install-nix-action@v30
+      with:
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build
       run: |
-        devbox run build --verbose -Dtarget=${{ matrix.targets }} -Doptimize=${{ matrix.optimize }}
+        nix develop -c zig build --verbose -Dtarget=${{ matrix.targets }} -Doptimize=${{ matrix.optimize }}
     - name: For mac/linux, tar.gz
       if: ${{ !endsWith(matrix.targets, 'windows') }}
       working-directory: ./zig-out/bin/
