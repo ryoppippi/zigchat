@@ -17,3 +17,7 @@ runs:
       with:
         name: ryoppippi
         authToken: ${{ inputs.cachix-auth-token }}
+
+    - name: Prepare Nix development environment
+      shell: bash
+      run: nix develop -c true
