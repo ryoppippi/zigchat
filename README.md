@@ -30,28 +30,32 @@ zigchat "Hello!"
 ```
 
 ## Development
-This project uses [Nix flakes](https://nixos.wiki/wiki/Flakes) to manage the development environment.
+This project uses [Nix flakes](https://nixos.wiki/wiki/Flakes) and [just](https://github.com/casey/just) for development.
 
-### Setup
+### Quick Start
 ```bash
-# Enter the development shell
+# Run directly from GitHub
+nix shell github:ryoppippi/zigchat -c zigchat "Hello!"
+
+# Or build locally
+nix build
+./result/bin/zigchat "Hello!"
+```
+
+### Development Environment
+```bash
+# Enter development shell
 nix develop
 
-# Or use direnv for automatic environment loading
-echo "use flake" > .envrc
-direnv allow
+# Use just commands
+just build           # Build the project
+just build-release   # Build with release optimisation
+just test            # Run tests
+just fmt             # Format code
+just fmt-check       # Check formatting
+just run "Hello!"    # Run the application
+just zon2nix         # Regenerate deps.nix
 ```
-
-### Build
-```bash
-# Build the project
-nix build
-
-# Or within the dev shell
-zig build
-```
-
-※  If you want to compile in `0.11.0` see the `zig-0.11.0` branch.
 
 
 ## Authors
