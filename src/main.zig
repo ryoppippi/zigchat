@@ -21,15 +21,17 @@ comptime {
 
 const uri = std.Uri.parse("https://api.openai.com/v1/chat/completions") catch @compileError("invalid uri");
 
+var stdout_buffer: [4096]u8 = undefined;
+var stderr_buffer: [4096]u8 = undefined;
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var arena = std.heap.ArenaAllocator.init(gpa.allocator());
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    // init stdout
-    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
-    const stdout = bw.writer();
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     // get params
     const params = comptime clap.parseParamsComptime(
@@ -50,11 +52,12 @@ pub fn main() !void {
     defer args_res.deinit();
 
     if (args_res.args.help != 0) {
-        return clap.help(std.io.getStdErr().writer(), clap.Help, &params, .{});
+        var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+        return clap.help(&stderr_writer.interface, clap.Help, &params, .{});
     }
     if (args_res.args.version != 0) {
         try stdout.print("{s}\n", .{metadata.version});
-        return try bw.flush();
+        return stdout.flush();
     }
 
     const prompt = args_res.positionals[0] orelse {
@@ -78,7 +81,7 @@ pub fn main() !void {
     };
 
     // https://platform.openai.com/docs/api-reference/making-requests
-    const json = try std.json.stringifyAlloc(
+    const json = try std.json.Stringify.valueAlloc(
         allocator,
         OpenAIRequest{
             .model = "gpt-3.5-turbo",
@@ -92,14 +95,14 @@ pub fn main() !void {
 
     std.log.info("json: {s}\n", .{json});
 
-    var res_array_list = std.ArrayList(u8).init(allocator);
-    defer res_array_list.deinit();
+    var response_writer: std.Io.Writer.Allocating = .init(allocator);
+    defer response_writer.deinit();
 
     const res = try client.fetch(.{
         .method = .POST,
         .location = .{ .uri = uri },
         .headers = headers,
-        .response_storage = .{ .dynamic = &res_array_list },
+        .response_writer = &response_writer.writer,
         .payload = json,
     });
 
@@ -108,7 +111,7 @@ pub fn main() !void {
         unreachable;
     }
 
-    const body = res_array_list.items;
+    const body = response_writer.written();
 
     if (body.len == 0) {
         std.log.err("no body\n", .{});
@@ -127,7 +130,7 @@ pub fn main() !void {
 
     try stdout.print("{s}", .{parsed_body.value.choices[0].message.content});
 
-    try bw.flush();
+    try stdout.flush();
 }
 
 const OpenAIRequest = struct {

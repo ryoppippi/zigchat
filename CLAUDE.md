@@ -50,9 +50,9 @@ The application is structured as a simple single-file CLI tool:
 
 ## Key Dependencies
 
-- **clap v0.10.0**: Used for command-line argument parsing
-- **Zig 0.14.0**: The project requires this specific version
-- **ZLS 0.14.0**: Zig Language Server for IDE features
+- **clap v0.11.0**: Used for command-line argument parsing
+- **Zig 0.15.x**: The project requires Zig 0.15.x (currently using 0.15.2 via nixpkgs)
+- **zon2nix**: Used to generate Nix expressions from build.zig.zon dependencies
 
 ## CI/CD Pipeline
 
@@ -62,6 +62,13 @@ The project uses GitHub Actions for:
 - Building binaries for Linux (x86_64, aarch64), Windows (x86_64), and macOS (x86_64, aarch64)
 - Automated releases when tags are pushed
 
-## Version Information
+## Nix Integration
 
-Note: There's a version mismatch between build.zig (0.6.0) and build.zig.zon (0.0.4) that should be reconciled.
+The project uses zon2nix for dependency management in Nix builds:
+- **deps.nix**: Auto-generated from build.zig.zon using `zon2nix > deps.nix`
+- **flake.nix**: Uses `zig_0_15.hook` from nixpkgs for build integration
+
+To regenerate deps.nix after updating dependencies:
+```bash
+nix run nixpkgs#zon2nix > deps.nix
+```

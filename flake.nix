@@ -12,26 +12,42 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         zigPkgs = zig-overlay.packages.${system};
-        zig = zigPkgs."0.14.0";
-        
+        zig = zigPkgs."0.15.2";
+
         zigchat = pkgs.stdenv.mkDerivation {
           pname = "zigchat";
           version = "0.7.0";
-          
+
           src = ./.;
-          
-          nativeBuildInputs = [
-            zig
-          ];
-          
-          buildPhase = ''
-            zig build --release=fast
+
+          nativeBuildInputs = [ zig ];
+
+          configurePhase = ''
+            runHook preConfigure
+            export ZIG_GLOBAL_CACHE_DIR=$(mktemp -d)
+            ln -s ${pkgs.callPackage ./deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+            runHook postConfigure
           '';
-          
+
+          buildPhase = ''
+            runHook preBuild
+            zig build --release=safe
+            runHook postBuild
+          '';
+
           installPhase = ''
+            runHook preInstall
             mkdir -p $out/bin
             cp zig-out/bin/zigchat $out/bin/
+            runHook postInstall
           '';
+
+          meta = {
+            description = "CLI tool for OpenAI chat completions";
+            homepage = "https://github.com/ryoppippi/zigchat";
+            license = pkgs.lib.licenses.mit;
+            mainProgram = "zigchat";
+          };
         };
       in
       {
@@ -44,34 +60,13 @@
           buildInputs = [
             zig
             pkgs.zls
+            pkgs.just
+            pkgs.zon2nix
           ];
 
           shellHook = ''
             echo "zigchat development environment"
             zig version
-            
-            # Define convenient shell functions
-            build() {
-              zig build --verbose "$@"
-            }
-            
-            test() {
-              zig build test
-            }
-            
-            fmt() {
-              zig fmt src/*.zig *.zig *.zon
-            }
-            
-            fmt-check() {
-              zig fmt --check src/*.zig *.zig *.zon
-            }
-            
-            run() {
-              ./zig-out/bin/zigchat "$@"
-            }
-            
-            export -f build test fmt fmt-check run
           '';
         };
 
