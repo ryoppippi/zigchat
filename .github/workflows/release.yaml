@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_assets:
+    name: Build
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        targets:
+          - aarch64-linux
+          - x86_64-linux
+          - aarch64-windows
+          - x86_64-windows
+          - aarch64-macos
+          - x86_64-macos
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build
+        run: nix develop -c just build-release -Dtarget=${{ matrix.targets }}
+
+      - name: For mac/linux, tar.gz
+        if: ${{ !endsWith(matrix.targets, 'windows') }}
+        working-directory: ./zig-out/bin/
+        run: |
+          ls -la .
+          tar -czf zigchat-${{ matrix.targets }}.tar.gz *
+
+      - name: For windows, zip
+        if: ${{ endsWith(matrix.targets, 'windows') }}
+        working-directory: ./zig-out/bin/
+        run: |
+          ls -la .
+          zip -r zigchat-${{ matrix.targets }}.zip *.exe
+
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: dist-${{ matrix.targets }}
+          path: |
+            zig-out/bin/*.zip
+            zig-out/bin/*.tar.gz
+
+  publish:
+    name: Publish
+    needs: build_assets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+
+      - name: Release
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        with:
+          name: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            dist-*/*.zip
+            dist-*/*.tar.gz
