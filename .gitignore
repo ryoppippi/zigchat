@@ -6,3 +6,4 @@ zig-cache/
 .envrc
 result
 result-*
+!.envrc
