@@ -1,22 +1,30 @@
+name: CI
+
 on:
   workflow_dispatch:
   push:
   pull_request:
-    
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test_lint:
-    strategy:
-      matrix:
-        os: 
-          - ubuntu-latest
-    runs-on: ${{matrix.os}}
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v30
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - run: nix develop -c just fmt-check
-      - run: nix develop -c just test
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Check formatting
+        run: nix develop -c just fmt-check
+
+      - name: Run tests
+        run: nix develop -c just test
 
   build_assets:
     name: Release
@@ -33,35 +41,41 @@ jobs:
           - aarch64-macos
           - x86_64-macos
     steps:
-    - uses: actions/checkout@v4
-    - uses: cachix/install-nix-action@v30
-      with:
-        github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build
-      run: nix develop -c just build-release -Dtarget=${{ matrix.targets }}
-    - name: For mac/linux, tar.gz
-      if: ${{ !endsWith(matrix.targets, 'windows') }}
-      working-directory: ./zig-out/bin/
-      run: |
-        ls -la .
-        tar -czf zigchat-${{ matrix.targets }}.tar.gz *
-    - name: For windows, zip
-      if: ${{ endsWith(matrix.targets, 'windows') }}
-      working-directory: ./zig-out/bin/
-      run: |
-        ls -la .
-        zip -r zigchat-${{ matrix.targets }}.zip *.exe
-    - name: Upload to Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist-${{ matrix.targets }}
-        path: |
-          zig-out/bin/*.zip
-          zig-out/bin/*.tar.gz
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build
+        run: nix develop -c just build-release -Dtarget=${{ matrix.targets }}
+
+      - name: For mac/linux, tar.gz
+        if: ${{ !endsWith(matrix.targets, 'windows') }}
+        working-directory: ./zig-out/bin/
+        run: |
+          ls -la .
+          tar -czf zigchat-${{ matrix.targets }}.tar.gz *
+
+      - name: For windows, zip
+        if: ${{ endsWith(matrix.targets, 'windows') }}
+        working-directory: ./zig-out/bin/
+        run: |
+          ls -la .
+          zip -r zigchat-${{ matrix.targets }}.zip *.exe
+
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.targets }}
+          path: |
+            zig-out/bin/*.zip
+            zig-out/bin/*.tar.gz
 
   publish_binary_to_release:
     name: Publish Binary to Release
-    needs: 
+    needs:
       - test_lint
       - build_assets
     runs-on: ubuntu-latest
@@ -71,21 +85,22 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      with:
-        name: ${{ github.ref_name }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-        draft: true
-        generate_release_notes: true
-        files: |
-          dist-*/*.zip
-          dist-*/*.tar.gz
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            dist-*/*.zip
+            dist-*/*.tar.gz
 
   action-timeline:
-    needs: 
+    needs:
       - test_lint
       - build_assets
       - publish_binary_to_release
@@ -94,4 +109,4 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-    - uses: Kesin11/actions-timeline@v1
+      - uses: Kesin11/actions-timeline@v1
