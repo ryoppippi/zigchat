@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test_lint:
+  ci:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -22,6 +22,9 @@ jobs:
 
       - name: Check formatting
         run: nix develop -c just fmt-check
+
+      - name: Build
+        run: nix develop -c just build
 
       - name: Run tests
         run: nix develop -c just test
