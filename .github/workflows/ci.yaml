@@ -15,8 +15,8 @@ jobs:
       - uses: cachix/install-nix-action@v30
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - run: nix develop -c zig fmt --check src/*.zig *.zig *.zon
-      - run: nix develop -c zig build test
+      - run: nix develop -c just fmt-check
+      - run: nix develop -c just test
 
   build_assets:
     name: Release
@@ -32,16 +32,13 @@ jobs:
           - x86_64-windows
           - aarch64-macos
           - x86_64-macos
-        optimize:
-          - ReleaseSafe
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v30
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build
-      run: |
-        nix develop -c zig build --verbose -Dtarget=${{ matrix.targets }} -Doptimize=${{ matrix.optimize }}
+      run: nix develop -c just build-release -Dtarget=${{ matrix.targets }}
     - name: For mac/linux, tar.gz
       if: ${{ !endsWith(matrix.targets, 'windows') }}
       working-directory: ./zig-out/bin/
