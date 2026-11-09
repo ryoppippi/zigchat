@@ -29,8 +29,6 @@ jobs:
 
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
-        with:
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Build
         run: nix develop -c just build-release -Dtarget=${{ matrix.targets }}
